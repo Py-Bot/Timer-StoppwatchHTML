@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Stoppuhr und Timer</title>
+<style>
+    body {
+    background-color: rgb(77, 77, 77);
+}
+    button {
+        margin: 5px;
+        padding: 10px;
+        font-size: 16px;
+    }
+    #timeInput {
+        width: 100px; /* Hier die Breite des Eingabefelds ändern */
+    }
+    #timer, #worldClock, #stopwatchContainer {
+        text-align: center;
+    }
+    #worldClock {
+        position: fixed;
+        top: 0;
+        left: 50%;
+        transform: translateX(-50%);
+        background-color: rgba(255, 255, 255, 0.8);
+        padding: 10px;
+        border-bottom: 1px solid #ccc;
+        width: 100%;
+        box-sizing: border-box;
+        z-index: 1000;
+    }
+    #timerContainer {
+        margin-top: 250px; /* Hier die gewünschte Entfernung nach unten anpassen */
+    }
+    #timerTime {
+        margin-bottom: 10px;
+    }
+    #stopwatchContainer {
+        position: fixed;
+        top: 30%; /* Hier die gewünschte Position nach unten anpassen */
+        right: 0;
+        transform: translateY(-50%);
+        padding: 10px;
+        background-color: rgba(255, 255, 255, 0.8);
+        border-left: 1px solid #ccc;
+    }
+    #stopwatchTime {
+        font-size: 24px;
+    }
+</style>
+</head>
+<body>
+
+<div id="worldClock">
+    <h2>Weltuhr</h2>
+    <label for="country">Land:</label>
+    <select id="country">
+        <option value="Europe/Berlin">Deutschland</option>
+        <option value="America/New_York">USA</option>
+        <option value="Asia/Tokyo">Japan</option>
+        <!-- Weitere Optionen können hinzugefügt werden -->
+    </select>
+    <p id="worldTime"></p>
+</div>
+
+<div id="timerContainer">
+    <div id="timerTime"></div>
+    <label for="timeInput">Zeit:</label>
+    <input type="number" id="timeInput" placeholder="Zeit eingeben">
+    <select id="unit">
+        <option value="seconds">Sekunden</option>
+        <option value="minutes">Minuten</option>
+        <option value="hours">Stunden</option>
+    </select><br>
+
+    <button id="start">Start</button>
+    <button id="stop" style="display: none;">Stop</button>
+    <button id="resume" style="display: none;">Weiter</button>
+    <button id="reset">Reset</button><br>
+</div>
+
+<div id="stopwatchContainer">
+    <h2>Stoppuhr</h2>
+    <p id="stopwatchTime">00:00:00:000</p>
+    <button id="stopwatchStart">Start</button>
+    <button id="stopwatchStop" style="display: none;">Stop</button>
+    <button id="stopwatchReset">Reset</button>
+</div>
+
+<script>
+    // Weltuhr aktualisieren
+    function updateWorldTime() {
+        const selectedCountry = document.getElementById("country").value;
+        const options = { timeZone: selectedCountry, hour: 'numeric', minute: 'numeric', second: 'numeric' };
+        const formatter = new Intl.DateTimeFormat('de-DE', options);
+        document.getElementById("worldTime").innerText = formatter.format(new Date());
+    }
+    updateWorldTime();
+    setInterval(updateWorldTime, 1000);
+
+    // Timer
+    let timer;
+    let timeRemaining;
+
+    function startTimer() {
+        const input = document.getElementById("timeInput");
+        const unit = document.getElementById("unit").value;
+        const timeInSeconds = unit === "seconds" ? parseInt(input.value) :
+                               unit === "minutes" ? parseInt(input.value) * 60 :
+                               parseInt(input.value) * 3600;
+        timeRemaining = timeInSeconds;
+
+        timer = setInterval(updateTimer, 1000);
+        updateTimer();
+        document.getElementById("start").style.display = "none";
+        document.getElementById("stop").style.display = "inline";
+    }
+
+    function stopTimer() {
+        clearInterval(timer);
+        document.getElementById("resume").style.display = "inline";
+        document.getElementById("start").style.display = "none";
+        document.getElementById("stop").style.display = "none";
+    }
+
+    function resumeTimer() {
+        timer = setInterval(updateTimer, 1000);
+        document.getElementById("resume").style.display = "none";
+        document.getElementById("start").style.display = "none";
+        document.getElementById("stop").style.display = "inline";
+    }
+
+    function resetTimer() {
+        clearInterval(timer);
+        document.getElementById("start").style.display = "inline";
+        document.getElementById("stop").style.display = "none";
+        document.getElementById("resume").style.display = "none";
+        document.getElementById("timerTime").innerHTML = "";
+    }
+
+    function updateTimer() {
+        const minutes = Math.floor(timeRemaining / 60);
+        const seconds = timeRemaining % 60;
+        document.getElementById("timerTime").innerHTML = `${minutes} Minuten ${seconds} Sekunden`;
+        timeRemaining--;
+
+        if (timeRemaining < 0) {
+            clearInterval(timer);
+            document.getElementById("timerTime").innerHTML = "Zeit abgelaufen!";
+            document.getElementById("start").style.display = "none";
+            document.getElementById("stop").style.display = "none";
+            document.getElementById("resume").style.display = "none";
+        }
+    }
+
+    document.getElementById("start").addEventListener("click", startTimer);
+    document.getElementById("stop").addEventListener("click", stopTimer);
+    document.getElementById("resume").addEventListener("click", resumeTimer);
+    document.getElementById("reset").addEventListener("click", resetTimer);
+
+    // Stoppuhr
+    let stopwatchTimer;
+    let stopwatchMilliseconds = 0;
+    let stopwatchSeconds = 0;
+    let stopwatchMinutes = 0;
+    let stopwatchHours = 0;
+
+    function startStopwatch() {
+        stopwatchTimer = setInterval(updateStopwatch, 10);
+        document.getElementById("stopwatchStart").style.display = "none";
+        document.getElementById("stopwatchStop").style.display = "inline";
+    }
+
+    function stopStopwatch() {
+        clearInterval(stopwatchTimer);
+        document.getElementById("stopwatchStart").style.display = "inline";
+        document.getElementById("stopwatchStop").style.display = "none";
+    }
+
+    function resetStopwatch() {
+        clearInterval(stopwatchTimer);
+        stopwatchMilliseconds = 0;
+        stopwatchSeconds = 0;
+        stopwatchMinutes = 0;
+        stopwatchHours = 0;
+        document.getElementById("stopwatchTime").innerHTML = "00:00:00:000";
+        document.getElementById("stopwatchStart").style.display = "inline";
+    }
+    function updateStopwatch() {
+    stopwatchMilliseconds++;
+    if (stopwatchMilliseconds >= 100) {
+        stopwatchMilliseconds = 0;
+        stopwatchSeconds++;
+    }
+    if (stopwatchSeconds >= 60) {
+        stopwatchSeconds = 0;
+        stopwatchMinutes++;
+    }
+    if (stopwatchMinutes >= 60) {
+        stopwatchMinutes = 0;
+        stopwatchHours++;
+    }
+
+    const formattedTime = `${stopwatchHours.toString().padStart(2, '0')}:${stopwatchMinutes.toString().padStart(2, '0')}:${stopwatchSeconds.toString().padStart(2, '0')}:${stopwatchMilliseconds.toString().padStart(3, '0')}`;
+    document.getElementById("stopwatchTime").innerHTML = formattedTime;
+}
+
+document.getElementById("stopwatchStart").addEventListener("click", startStopwatch);
+document.getElementById("stopwatchStop").addEventListener("click", stopStopwatch);
+document.getElementById("stopwatchReset").addEventListener("click", resetStopwatch);
+</script>
+
+</body>
+</html>
